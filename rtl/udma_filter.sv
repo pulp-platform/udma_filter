@@ -379,7 +379,7 @@ module udma_filter
       .TRANS_SIZE    (TRANS_SIZE) 
   ) i_reg_if (
       .clk_i      ( clk_i       ),
-      .rstn_i     ( rstn_i      ),
+      .rstn_i     ( resetn_i    ),
 
       .cfg_data_i ( cfg_data_i  ),
       .cfg_addr_i ( cfg_addr_i  ),

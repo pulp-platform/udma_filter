@@ -144,12 +144,10 @@ module udma_filter_rx_dataout
           begin
             if (s_data_rx_valid && s_data_rx_ready)
             begin
-              s_is_sof = r_issof;
               s_sample_ptn_buffer_w = 1'b1;
               if ((r_ptn_buffer_w == cfg_len0_i) && (r_ptn_buffer_l == cfg_len1_i)) 
               begin
                 s_done = 1'b1;
-                s_is_eof = 1'b1;
                 s_ptn_buffer_w = 0;
                 s_ptn_buffer_l = 0;
                 s_sample_ptn_buffer_l = 1'b1;
@@ -177,12 +175,10 @@ module udma_filter_rx_dataout
           begin
             if (s_data_rx_valid && s_data_rx_ready)
             begin
-              s_is_sof = r_issof;
               s_sample_ptn_buffer_w = 1'b1;
               if ((r_ptn_buffer_w == cfg_len0_i) && (r_ptn_buffer_l == cfg_len1_i)) 
               begin
                 s_done = 1'b1;
-                s_is_eof = 1'b1;
                 s_ptn_buffer_w = 0;
                 s_ptn_buffer_l = 0;
                 s_sample_ptn_buffer_l = 1'b1;
