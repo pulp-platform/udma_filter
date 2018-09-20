@@ -224,7 +224,7 @@ module udma_filter
 
    assign filter_ready_o = s_filter_ready;
 
-  assign s_status = r_status | {s_sel_out_valid,s_sel_opb_valid,s_sel_opa_valid}; //mask status of all the channels with their on/off status
+  assign s_status = r_status | {!s_sel_out_valid,!s_sel_opb_valid,!s_sel_opa_valid}; //mask status of all the channels with their on/off status
   assign s_done   = &s_status;
   assign s_event  = s_done & ~r_done; //when all of them are done then rise the int
   assign eot_event_o = s_event;
@@ -554,7 +554,7 @@ module udma_filter
       .rx_ch_data_o    ( filter_rx_ch_data_o        ),
       .rx_ch_ready_i   ( filter_rx_ch_ready_i       ),
       .cmd_start_i     ( s_start_out                ),
-      .cmd_done_i      ( s_done_out                 ),
+      .cmd_done_o      ( s_done_out                 ),
       .cfg_start_addr_i( s_cfg_filter_rx_start_addr ),
       .cfg_datasize_i  ( s_cfg_filter_rx_datasize   ),
       .cfg_mode_i      ( s_cfg_filter_rx_mode       ),
