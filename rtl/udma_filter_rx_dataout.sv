@@ -42,7 +42,7 @@ module udma_filter_rx_dataout
     input  logic                      rx_ch_ready_i,
 
     input  logic                      cmd_start_i,
-    output logic                      cmd_done_i,
+    output logic                      cmd_done_o,
 
     input  logic [L2_AWIDTH_NOAL-1:0] cfg_start_addr_i,
     input  logic                [1:0] cfg_datasize_i,
@@ -87,6 +87,8 @@ module udma_filter_rx_dataout
     assign rx_ch_data_o     = s_data_rx;
     assign rx_ch_valid_o    = s_data_rx_valid;
     assign s_data_rx_ready  = rx_ch_ready_i;
+
+    assign cmd_done_o = s_done;
 
     io_generic_fifo #(
         .DATA_WIDTH(DATA_WIDTH),
@@ -185,7 +187,7 @@ module udma_filter_rx_dataout
               end
               else if (r_ptn_buffer_l == cfg_len1_i)
               begin
-                s_sample_ptn_buffer_w  = 1'b1;
+                s_sample_ptn_buffer_l  = 1'b1;
                 s_sample_loc_pointer   = 1'b1;
                 s_sample_loc_startaddr = 1'b1;
                 s_ptn_buffer_l = 0;
