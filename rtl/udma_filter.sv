@@ -162,7 +162,7 @@ module udma_filter
 
   logic       s_filter_ready;
 
-  logic                       [2:0] s_cfg_filter_mode;
+  logic                       [3:0] s_cfg_filter_mode;
   logic                             s_cfg_filter_start;
 
   logic [1:0]  [L2_AWIDTH_NOAL-1:0] s_cfg_filter_tx_start_addr;
@@ -187,7 +187,10 @@ module udma_filter
   logic                      [31:0] s_cfg_au_reg1;
 
   logic                      [31:0] s_cfg_bincu_threshold;
+  logic                       [1:0] s_cfg_bincu_datasize;
   logic            [TRANS_SIZE-1:0] s_cfg_bincu_counter;
+  logic            [TRANS_SIZE-1:0] s_cfg_bincu_counter_val;
+  logic                             s_cfg_bincu_en_cnt;
   
    assign s_start_out = s_cfg_filter_start & s_sel_out_valid;
    assign s_start_cha = s_cfg_filter_start & s_sel_opa_valid;
@@ -413,7 +416,11 @@ module udma_filter
       .cfg_au_reg1_o             ( s_cfg_au_reg1              ),
 
       .cfg_bincu_threshold_o     ( s_cfg_bincu_threshold      ),
+      .cfg_bincu_datasize_o      ( s_cfg_bincu_datasize       ),
       .cfg_bincu_counter_o       ( s_cfg_bincu_counter        ),
+      .cfg_bincu_en_counter_o    ( s_cfg_bincu_en_cnt         ),
+
+      .bincu_counter_i           ( s_cfg_bincu_counter_val    ),
 
       .filter_done_i             ( s_event                    )
   );
@@ -521,9 +528,12 @@ module udma_filter
         .clk_i            ( clk_i                 ),
         .resetn_i         ( resetn_i              ),
         .cfg_use_signed_i ( s_cfg_au_use_signed   ),
+        .cfg_en_counter_i ( s_cfg_bincu_en_cnt    ),
         .cfg_out_enable_i ( s_bincu_outenable     ),
         .cfg_threshold_i  ( s_cfg_bincu_threshold ),
         .cfg_counter_i    ( s_cfg_bincu_counter   ),
+        .cfg_datasize_i   ( s_cfg_bincu_datasize  ),
+        .counter_val_o    ( s_cfg_bincu_counter_val ),
         .cmd_start_i      ( s_start_bcu           ),
         .act_event_o      ( act_event_o           ),
         .input_data_i     ( s_bincu_in_data       ),

@@ -28,9 +28,12 @@ module udma_filter_bincu
 
   input  logic                  cfg_use_signed_i,
   input  logic                  cfg_out_enable_i,
+  input  logic                  cfg_en_counter_i,
 
   input  logic [DATA_WIDTH-1:0] cfg_threshold_i,
   input  logic [TRANS_SIZE-1:0] cfg_counter_i,
+  input  logic            [1:0] cfg_datasize_i,
+  output logic [TRANS_SIZE-1:0] counter_val_o,
 
   input  logic                  cmd_start_i,
 
@@ -67,11 +70,13 @@ module udma_filter_bincu
   	assign output_valid_o = input_valid_i;
   	assign output_eof_o = input_eof_i;
   	assign output_sof_o = input_sof_i;
-  	assign input_ready_o = output_ready_i;
+  	assign input_ready_o = cfg_out_enable_i ? output_ready_i : 1'b1;
+
+  	assign counter_val_o = r_counter;
 
 	always_comb begin : proc_
 		s_input_data = input_data_i;
-		case(input_datasize_i)
+		case(cfg_datasize_i)
 			2'b00:
 				s_input_data = $signed({input_data_i[7] & cfg_use_signed_i,input_data_i[7:0]});
 			2'b01:
@@ -92,7 +97,7 @@ module udma_filter_bincu
 			else
 			begin
 				r_count_of <= s_counter_of;
-				if(~cfg_out_enable_i && s_th_event && input_valid_i)
+				if(cfg_en_counter_i && s_th_event && input_valid_i)
 					r_counter <= r_counter + 1;
 			end
 		end

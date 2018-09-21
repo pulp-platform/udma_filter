@@ -39,8 +39,10 @@
 `define REG_AU_REG1     5'b10001 //BASEADDR+0x44
 `define REG_BINCU_TH    5'b10010 //BASEADDR+0x48
 `define REG_BINCU_CNT   5'b10011 //BASEADDR+0x4C
-`define REG_FILT        5'b10100 //BASEADDR+0x50
-`define REG_FILT_CMD    5'b10101 //BASEADDR+0x54
+`define REG_BINCU_SETUP 5'b10100 //BASEADDR+0x50
+`define REG_BINCU_VAL   5'b10101 //BASEADDR+0x54
+`define REG_FILT        5'b10110 //BASEADDR+0x58
+`define REG_FILT_CMD    5'b10111 //BASEADDR+0x5C
 
 module udma_filter_reg_if
   #(
@@ -58,7 +60,7 @@ module udma_filter_reg_if
     output logic                      [31:0] cfg_data_o,
 	output logic                             cfg_ready_o,
 
-    output logic                       [2:0] cfg_filter_mode_o,
+    output logic                       [3:0] cfg_filter_mode_o,
     output logic                             cfg_filter_start_o,
 
     output logic [1:0]  [L2_AWIDTH_NOAL-1:0] cfg_filter_tx_start_addr_o,
@@ -84,6 +86,10 @@ module udma_filter_reg_if
 
     output logic                      [31:0] cfg_bincu_threshold_o,
     output logic            [TRANS_SIZE-1:0] cfg_bincu_counter_o,
+    output logic                             cfg_bincu_en_counter_o,
+    output logic                       [1:0] cfg_bincu_datasize_o,
+
+    input  logic            [TRANS_SIZE-1:0] bincu_counter_i,
 
     input  logic                             filter_done_i
 );
@@ -108,7 +114,9 @@ module udma_filter_reg_if
     logic                      [31:0] r_au_reg1;
     logic                      [31:0] r_bincu_threshold;
     logic            [TRANS_SIZE-1:0] r_bincu_counter;
-    logic                       [2:0] r_filter_mode;
+    logic                       [1:0] r_bincu_datasize;
+    logic                             r_bincu_en_counter;
+    logic                       [3:0] r_filter_mode;
 
     logic [1:0]  [L2_AWIDTH_NOAL-1:0] r_commit_filter_tx_start_addr;
     logic [1:0]                 [1:0] r_commit_filter_tx_datasize;
@@ -130,7 +138,9 @@ module udma_filter_reg_if
     logic                      [31:0] r_commit_au_reg1;
     logic                      [31:0] r_commit_bincu_threshold;
     logic            [TRANS_SIZE-1:0] r_commit_bincu_counter;
-    logic                       [2:0] r_commit_filter_mode;
+    logic                       [1:0] r_commit_bincu_datasize;
+    logic                             r_commit_bincu_en_counter;
+    logic                       [3:0] r_commit_filter_mode;
 
     logic                             r_filter_start;
 
@@ -168,6 +178,8 @@ module udma_filter_reg_if
     assign cfg_au_reg1_o              = r_commit_au_reg1;
     assign cfg_bincu_counter_o        = r_commit_bincu_counter;
     assign cfg_bincu_threshold_o      = r_commit_bincu_threshold;
+    assign cfg_bincu_en_counter_o     = r_commit_bincu_en_counter;
+    assign cfg_bincu_datasize_o       = r_commit_bincu_datasize;
 
 
     always_comb begin : proc_pending
@@ -266,6 +278,8 @@ module udma_filter_reg_if
             r_commit_au_reg1                 <= 0;
             r_commit_bincu_threshold         <= 0;
             r_commit_bincu_counter           <= 0;
+            r_commit_bincu_datasize          <= 0;
+            r_commit_bincu_en_counter        <= 0;
             r_commit_filter_mode             <= 0;
         end
         else
@@ -298,6 +312,8 @@ module udma_filter_reg_if
                 r_commit_au_reg1                 <= r_au_reg1                ;
                 r_commit_bincu_threshold         <= r_bincu_threshold        ;
                 r_commit_bincu_counter           <= r_bincu_counter          ;
+                r_commit_bincu_datasize          <= r_bincu_datasize         ;
+                r_commit_bincu_en_counter        <= r_bincu_en_counter       ;
                 r_commit_filter_mode             <= r_filter_mode            ;
             end
             if(s_clr_pending)
@@ -337,6 +353,8 @@ module udma_filter_reg_if
             r_au_reg1                 <= 0;
             r_bincu_threshold         <= 0;
             r_bincu_counter           <= 0;
+            r_bincu_datasize          <= 0;
+            r_bincu_en_counter        <= 0;
             r_filter_mode             <= 0;
             r_filter_start            <= 0;
         end
@@ -432,13 +450,18 @@ module udma_filter_reg_if
                 begin
                     r_bincu_threshold <= cfg_data_i;
                 end
+                `REG_BINCU_SETUP:
+                begin
+                    r_bincu_datasize <= cfg_data_i[1:0];
+                end
                 `REG_BINCU_CNT:
                 begin
-                    r_bincu_counter <= cfg_data_i[TRANS_SIZE-1:0];
+                    r_bincu_counter    <= cfg_data_i[TRANS_SIZE-1:0];
+                    r_bincu_en_counter <= cfg_data_i[31];
                 end
                 `REG_FILT:
                 begin
-                    r_filter_mode <= cfg_data_i[2:0];
+                    r_filter_mode <= cfg_data_i[3:0];
                 end
                 endcase
             end
@@ -450,61 +473,68 @@ module udma_filter_reg_if
         cfg_data_o = 32'h0;
         case (s_rd_addr)
         `REG_TX_CH0_ADD:
-            cfg_data_o[L2_AWIDTH_NOAL-1:0] =r_filter_tx_start_addr[0];
+            cfg_data_o[L2_AWIDTH_NOAL-1:0] =r_commit_filter_tx_start_addr[0];
         `REG_TX_CH0_CFG:
         begin
-            cfg_data_o[9:8] = r_filter_tx_mode[0];
-            cfg_data_o[1:0] = r_filter_tx_datasize[0];
+            cfg_data_o[9:8] = r_commit_filter_tx_mode[0];
+            cfg_data_o[1:0] = r_commit_filter_tx_datasize[0];
         end
         `REG_TX_CH0_LEN0:
-            cfg_data_o[TRANS_SIZE-1:0] = r_filter_tx_len0[0];
+            cfg_data_o[TRANS_SIZE-1:0] = r_commit_filter_tx_len0[0];
         `REG_TX_CH0_LEN1:
-            cfg_data_o[TRANS_SIZE-1:0] = r_filter_tx_len1[0];
+            cfg_data_o[TRANS_SIZE-1:0] = r_commit_filter_tx_len1[0];
         `REG_TX_CH0_LEN2:
-            cfg_data_o[TRANS_SIZE-1:0] = r_filter_tx_len2[0];
+            cfg_data_o[TRANS_SIZE-1:0] = r_commit_filter_tx_len2[0];
         `REG_TX_CH1_ADD:
-            cfg_data_o[L2_AWIDTH_NOAL-1:0] = r_filter_tx_start_addr[1];
+            cfg_data_o[L2_AWIDTH_NOAL-1:0] = r_commit_filter_tx_start_addr[1];
         `REG_TX_CH1_CFG:
         begin
-           cfg_data_o[1:0] = r_filter_tx_datasize[1];
-           cfg_data_o[9:8] = r_filter_tx_mode[1]    ;
+           cfg_data_o[1:0] = r_commit_filter_tx_datasize[1];
+           cfg_data_o[9:8] = r_commit_filter_tx_mode[1]    ;
         end
         `REG_TX_CH1_LEN0:
-            cfg_data_o[TRANS_SIZE-1:0] = r_filter_tx_len0[1];
+            cfg_data_o[TRANS_SIZE-1:0] = r_commit_filter_tx_len0[1];
         `REG_TX_CH1_LEN1:
-            cfg_data_o[TRANS_SIZE-1:0] = r_filter_tx_len1[1];
+            cfg_data_o[TRANS_SIZE-1:0] = r_commit_filter_tx_len1[1];
         `REG_TX_CH1_LEN2:
-            cfg_data_o[TRANS_SIZE-1:0] = r_filter_tx_len2[1];
+            cfg_data_o[TRANS_SIZE-1:0] = r_commit_filter_tx_len2[1];
         `REG_RX_CH_ADD:
-            cfg_data_o[L2_AWIDTH_NOAL-1:0] = r_filter_rx_start_addr[1];
+            cfg_data_o[L2_AWIDTH_NOAL-1:0] = r_commit_filter_rx_start_addr[1];
         `REG_RX_CH_CFG:
         begin
-           cfg_data_o[1:0] = r_filter_rx_datasize[1];
-           cfg_data_o[9:8] = r_filter_rx_mode[1]    ;
+           cfg_data_o[1:0] = r_commit_filter_rx_datasize[1];
+           cfg_data_o[9:8] = r_commit_filter_rx_mode[1]    ;
         end
         `REG_RX_CH_LEN0:
-            cfg_data_o[15:0] = r_filter_rx_len0[1];
+            cfg_data_o[15:0] = r_commit_filter_rx_len0[1];
         `REG_RX_CH_LEN1:
-            cfg_data_o[15:0] = r_filter_rx_len1[1];
+            cfg_data_o[15:0] = r_commit_filter_rx_len1[1];
         `REG_RX_CH_LEN2:
-            cfg_data_o[15:0] = r_filter_rx_len2[1];
+            cfg_data_o[15:0] = r_commit_filter_rx_len2[1];
         `REG_AU_CFG:
         begin
-            cfg_data_o[0]     = r_au_use_signed;
-            cfg_data_o[1]     = r_au_bypass    ;
-            cfg_data_o[11:8]  = r_au_mode      ;
-            cfg_data_o[20:16] = r_au_shift     ;
+            cfg_data_o[0]     = r_commit_au_use_signed;
+            cfg_data_o[1]     = r_commit_au_bypass    ;
+            cfg_data_o[11:8]  = r_commit_au_mode      ;
+            cfg_data_o[20:16] = r_commit_au_shift     ;
         end
         `REG_AU_REG0:
-            cfg_data_o = r_au_reg0;
+            cfg_data_o = r_commit_au_reg0;
         `REG_AU_REG1:
-            cfg_data_o = r_au_reg1;
+            cfg_data_o = r_commit_au_reg1;
         `REG_BINCU_TH:
-            cfg_data_o = r_bincu_threshold;
+            cfg_data_o = r_commit_bincu_threshold;
+        `REG_BINCU_SETUP:
+            cfg_data_o[1:0] = r_commit_bincu_datasize;
+        `REG_BINCU_VAL:
+            cfg_data_o[TRANS_SIZE-1:0] = bincu_counter_i;
         `REG_BINCU_CNT:
-            cfg_data_o[TRANS_SIZE-1:0] = r_bincu_counter;
+        begin
+            cfg_data_o[TRANS_SIZE-1:0] = r_commit_bincu_counter;
+            cfg_data_o[31] = r_commit_bincu_en_counter;
+        end
         `REG_FILT:
-            cfg_data_o[2:0] = r_filter_mode;
+            cfg_data_o[3:0] = r_commit_filter_mode;
         default:
             cfg_data_o = 'h0;
         endcase
