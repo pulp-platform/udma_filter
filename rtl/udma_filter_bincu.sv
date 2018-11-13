@@ -64,7 +64,7 @@ module udma_filter_bincu
   	assign s_th_event    = (s_input_data > cfg_threshold_i);
   	assign s_counter_of  = r_counter == cfg_counter_i;
 
-  	assign act_event_o   = s_counter_of & ~r_count_of;
+  	assign act_event_o   = cfg_en_counter_i ? (s_counter_of & ~r_count_of) : 1'b0;
 
   	assign output_data_o = s_th_event ? 32'h1 : 32'h0;
   	assign output_valid_o = input_valid_i;
