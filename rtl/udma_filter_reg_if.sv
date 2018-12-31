@@ -43,55 +43,56 @@
 `define REG_BINCU_VAL   5'b10101 //BASEADDR+0x54
 `define REG_FILT        5'b10110 //BASEADDR+0x58
 `define REG_FILT_CMD    5'b10111 //BASEADDR+0x5C
+`define REG_STATUS      5'b11000 //BASEADDR+0x60
 
 module udma_filter_reg_if
   #(
     parameter L2_AWIDTH_NOAL = 15,
-    parameter TRANS_SIZE     = 15 
+    parameter TRANS_SIZE     = 15
     )
    (
-	input  logic 	                         clk_i,
-	input  logic   	                         rstn_i,
+    input logic                             clk_i,
+    input logic                             rstn_i,
 
-	input  logic                      [31:0] cfg_data_i,
-	input  logic                       [4:0] cfg_addr_i,
-	input  logic                             cfg_valid_i,
-	input  logic                             cfg_rwn_i,
-    output logic                      [31:0] cfg_data_o,
-	output logic                             cfg_ready_o,
+    input logic [31:0]                      cfg_data_i,
+    input logic [4:0]                       cfg_addr_i,
+    input logic                             cfg_valid_i,
+    input logic                             cfg_rwn_i,
+    output logic [31:0]                     cfg_data_o,
+    output logic                            cfg_ready_o,
 
-    output logic                       [3:0] cfg_filter_mode_o,
-    output logic                             cfg_filter_start_o,
+    output logic [3:0]                      cfg_filter_mode_o,
+    output logic                            cfg_filter_start_o,
 
-    output logic [1:0]  [L2_AWIDTH_NOAL-1:0] cfg_filter_tx_start_addr_o,
-    output logic [1:0]                 [1:0] cfg_filter_tx_datasize_o,
-    output logic [1:0]                 [1:0] cfg_filter_tx_mode_o,
-    output logic [1:0]      [TRANS_SIZE-1:0] cfg_filter_tx_len0_o,
-    output logic [1:0]      [TRANS_SIZE-1:0] cfg_filter_tx_len1_o,
-    output logic [1:0]      [TRANS_SIZE-1:0] cfg_filter_tx_len2_o,
+    output logic [1:0] [L2_AWIDTH_NOAL-1:0] cfg_filter_tx_start_addr_o,
+    output logic [1:0] [1:0]                cfg_filter_tx_datasize_o,
+    output logic [1:0] [1:0]                cfg_filter_tx_mode_o,
+    output logic [1:0] [TRANS_SIZE-1:0]     cfg_filter_tx_len0_o,
+    output logic [1:0] [TRANS_SIZE-1:0]     cfg_filter_tx_len1_o,
+    output logic [1:0] [TRANS_SIZE-1:0]     cfg_filter_tx_len2_o,
 
-    output logic        [L2_AWIDTH_NOAL-1:0] cfg_filter_rx_start_addr_o,
-    output logic                       [1:0] cfg_filter_rx_datasize_o,
-    output logic                       [1:0] cfg_filter_rx_mode_o,
-    output logic            [TRANS_SIZE-1:0] cfg_filter_rx_len0_o,
-    output logic            [TRANS_SIZE-1:0] cfg_filter_rx_len1_o,
-    output logic            [TRANS_SIZE-1:0] cfg_filter_rx_len2_o,
+    output logic [L2_AWIDTH_NOAL-1:0]       cfg_filter_rx_start_addr_o,
+    output logic [1:0]                      cfg_filter_rx_datasize_o,
+    output logic [1:0]                      cfg_filter_rx_mode_o,
+    output logic [TRANS_SIZE-1:0]           cfg_filter_rx_len0_o,
+    output logic [TRANS_SIZE-1:0]           cfg_filter_rx_len1_o,
+    output logic [TRANS_SIZE-1:0]           cfg_filter_rx_len2_o,
 
-    output logic                             cfg_au_use_signed_o,
-    output logic                             cfg_au_bypass_o,
-    output logic                       [3:0] cfg_au_mode_o,
-    output logic                       [4:0] cfg_au_shift_o,
-    output logic                      [31:0] cfg_au_reg0_o,
-    output logic                      [31:0] cfg_au_reg1_o,
+    output logic                            cfg_au_use_signed_o,
+    output logic                            cfg_au_bypass_o,
+    output logic [3:0]                      cfg_au_mode_o,
+    output logic [4:0]                      cfg_au_shift_o,
+    output logic [31:0]                     cfg_au_reg0_o,
+    output logic [31:0]                     cfg_au_reg1_o,
 
-    output logic                      [31:0] cfg_bincu_threshold_o,
-    output logic            [TRANS_SIZE-1:0] cfg_bincu_counter_o,
-    output logic                             cfg_bincu_en_counter_o,
-    output logic                       [1:0] cfg_bincu_datasize_o,
+    output logic [31:0]                     cfg_bincu_threshold_o,
+    output logic [TRANS_SIZE-1:0]           cfg_bincu_counter_o,
+    output logic                            cfg_bincu_en_counter_o,
+    output logic [1:0]                      cfg_bincu_datasize_o,
 
-    input  logic            [TRANS_SIZE-1:0] bincu_counter_i,
+    input logic [TRANS_SIZE-1:0]            bincu_counter_i,
 
-    input  logic                             filter_done_i
+    input logic                             filter_done_i
 );
 
     logic [1:0]  [L2_AWIDTH_NOAL-1:0] r_filter_tx_start_addr;
@@ -143,6 +144,7 @@ module udma_filter_reg_if
     logic                       [3:0] r_commit_filter_mode;
 
     logic                             r_filter_start;
+    logic                             r_filter_done;
 
     logic                [4:0] s_wr_addr;
     logic                [4:0] s_rd_addr;
@@ -234,12 +236,12 @@ module udma_filter_reg_if
                     end
                 end
             end
-        endcase  
+        endcase
     end
 
-    always_ff @(posedge clk_i, negedge rstn_i) 
+    always_ff @(posedge clk_i, negedge rstn_i)
     begin
-        if(~rstn_i) 
+        if(~rstn_i)
         begin
             r_state <= ST_IDLE;
         end
@@ -247,9 +249,9 @@ module udma_filter_reg_if
             r_state <= s_state;
     end
 
-    always_ff @(posedge clk_i, negedge rstn_i) 
+    always_ff @(posedge clk_i, negedge rstn_i)
     begin
-        if(~rstn_i) 
+        if(~rstn_i)
         begin
             r_pending                        <= 0;
             r_commit_filter_tx_start_addr[0] <= 0;
@@ -323,9 +325,9 @@ module udma_filter_reg_if
         end
     end
 
-    always_ff @(posedge clk_i, negedge rstn_i) 
+    always_ff @(posedge clk_i, negedge rstn_i)
     begin
-        if(~rstn_i) 
+        if(~rstn_i)
         begin
             r_filter_tx_start_addr[0] <= 0;
             r_filter_tx_datasize[0]   <= 0;
@@ -357,9 +359,13 @@ module udma_filter_reg_if
             r_bincu_en_counter        <= 0;
             r_filter_mode             <= 0;
             r_filter_start            <= 0;
+            r_filter_done             <= 1'b0;
         end
         else
         begin
+           if (filter_done_i)
+             r_filter_done <= 1'b1;
+
             if (cfg_valid_i && !cfg_rwn_i && (s_wr_addr == `REG_FILT_CMD) && cfg_data_i[0])
                 r_filter_start <= 1'b1;
             else
@@ -463,6 +469,11 @@ module udma_filter_reg_if
                 begin
                     r_filter_mode <= cfg_data_i[3:0];
                 end
+                `REG_STATUS:
+                begin
+                   if (cfg_data_i[0])
+                     r_filter_done <= 1'b0;
+                end
                 endcase
             end
         end
@@ -535,6 +546,8 @@ module udma_filter_reg_if
         end
         `REG_FILT:
             cfg_data_o[3:0] = r_commit_filter_mode;
+        `REG_STATUS:
+            cfg_data_o[0]   = r_filter_done;
         default:
             cfg_data_o = 'h0;
         endcase
@@ -543,4 +556,4 @@ module udma_filter_reg_if
     assign cfg_ready_o  = 1'b1;
 
 
-endmodule 
+endmodule
