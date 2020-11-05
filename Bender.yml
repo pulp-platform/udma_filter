@@ -6,7 +6,7 @@ package:
     - "Florent Rotenberg <florent.rotenberg@greenwaves-technologies.com>"
 
 dependencies:
-  udma_core: {path: "../udma_core"} # to be updated with git repo
+  udma_core: { git: "git@github.com:micprog/udma_core.git", rev: "203f457a979810aba6c64a1c7ddf3cdee87c9207" } # To be updated with pulp-platform dependency
 
 sources:
   - rtl/udma_filter_au.sv
