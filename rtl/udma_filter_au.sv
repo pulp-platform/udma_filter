@@ -128,8 +128,24 @@ module udma_filter_au
     assign output_data_o  = s_outpostshift[31:0];
     assign output_valid_o = s_sum_acc ? r_accoutvalid : r_sample_out;
     assign output_datasize_o = operanda_datasize_i;
-
-    assign s_mac = $signed(s_opa)*$signed(s_opb) + $signed({s_sum[31] & cfg_use_signed_i,s_sum});
+    logic signed [32:0] s_sum_signed;
+    always_comb begin
+      s_sum_signed=0;
+      if (s_sum_inv) begin
+        if (cfg_use_signed_i) begin
+          s_sum_signed = $signed($signed(0)-$signed(s_sum));
+        end else begin
+          s_sum_signed = $signed($signed(0)-$unsigned(s_sum));
+        end
+      end else begin
+        if (cfg_use_signed_i) begin
+          s_sum_signed = $signed($unsigned(s_sum));
+        end else begin
+          s_sum_signed = $signed($signed(s_sum));
+        end
+      end
+    end
+    assign s_mac = $signed(s_opa)*$signed(s_opb) + s_sum_signed;
 
     assign s_sample_opa = output_ready_i & (operanda_valid_i & (cfg_bypass_i | !s_en_opb | (s_en_opb & operandb_valid_i)));
     assign s_sample_opb = output_ready_i & (operanda_valid_i &                             (s_en_opb & operandb_valid_i));
@@ -304,4 +320,3 @@ module udma_filter_au
     end
 
 endmodule
-
