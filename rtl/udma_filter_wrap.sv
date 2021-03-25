@@ -84,5 +84,12 @@ udma_filter #(
 assign events_o[0] = eot_event_s;
 assign events_o[1] = act_event_s;
 
+assign rx_ch[0].stream = '0;
+assign rx_ch[0].stream_id = '0;
+assign rx_ch[0].destination = '0;
+
+assign tx_ch[0].destination = '0;
+assign tx_ch[1].destination = '0;
+assign str_rx_ch[0].destination = '0;
 
 endmodule : udma_filter_wrap
