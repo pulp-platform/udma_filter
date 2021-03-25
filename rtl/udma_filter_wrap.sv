@@ -31,7 +31,7 @@ logic act_event_s;
 
 udma_filter #(
     .DATA_WIDTH    (32),
-    .FILTID_WIDTH  (8),
+    .FILTID_WIDTH  (udma_pkg::STREAM_ID_WIDTH),
     .L2_AWIDTH_NOAL(L2_AWIDTH_NOAL),
     .TRANS_SIZE    (TRANS_SIZE)
 
@@ -91,5 +91,8 @@ assign rx_ch[0].destination = '0;
 assign tx_ch[0].destination = '0;
 assign tx_ch[1].destination = '0;
 assign str_rx_ch[0].destination = '0;
+
+assign rx_ch[0].sot = '0;
+assign rx_ch[0].eot = '0;
 
 endmodule : udma_filter_wrap
