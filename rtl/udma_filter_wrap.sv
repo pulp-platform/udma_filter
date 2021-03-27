@@ -90,7 +90,7 @@ assign rx_ch[0].destination = '0;
 
 assign tx_ch[0].destination = '0;
 assign tx_ch[1].destination = '0;
-assign str_rx_ch[0].destination = '0;
+//assign str_rx_ch[0].destination = '0;
 
 assign rx_ch[0].sot = '0;
 assign rx_ch[0].eot = '0;
