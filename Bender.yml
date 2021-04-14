@@ -1,12 +1,12 @@
 package:
   name: udma_filter
-  authors: 
+  authors:
     - "Antonio Pullini <pullinia@iis.ee.ethz.ch>"
     - "Jie Chen <jie.chen@greenwaves-technologies.com>"
     - "Florent Rotenberg <florent.rotenberg@greenwaves-technologies.com>"
 
 dependencies:
-  udma_core: { git: "https://github.com/pulp-platform/udma_core.git", version: 1.0.1 }
+  udma_core: { git: "https://github.com/pulp-platform/udma_core.git", version: 2.0.0 }
 
 sources:
     # Source files grouped in levels. Files in level 0 have no dependencies on files in this
