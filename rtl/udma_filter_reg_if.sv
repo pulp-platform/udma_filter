@@ -325,6 +325,11 @@ module udma_filter_reg_if
         end
     end
 
+    logic r_filter_done_i;
+    logic r_filter_done_data0_i;
+
+    assign r_filter_done = r_filter_done_i || r_filter_done_data0_i; 
+
     always_ff @(posedge clk_i, negedge rstn_i)
     begin
         if(~rstn_i)
@@ -359,12 +364,14 @@ module udma_filter_reg_if
             r_bincu_en_counter        <= 0;
             r_filter_mode             <= 0;
             r_filter_start            <= 0;
-            r_filter_done             <= 1'b0;
+            r_filter_done_i           <= '0;
+            r_filter_done_data0_i     <= '0;
+            // r_filter_done             <= 1'b0;
         end
         else
         begin
            if (filter_done_i)
-             r_filter_done <= 1'b1;
+             r_filter_done_i <= 1'b1;
 
             if (cfg_valid_i && !cfg_rwn_i && (s_wr_addr == `REG_FILT_CMD) && cfg_data_i[0])
                 r_filter_start <= 1'b1;
@@ -472,7 +479,7 @@ module udma_filter_reg_if
                 `REG_STATUS:
                 begin
                    if (cfg_data_i[0])
-                     r_filter_done <= 1'b0;
+                     r_filter_done_data0_i <= 1'b0;
                 end
                 endcase
             end
