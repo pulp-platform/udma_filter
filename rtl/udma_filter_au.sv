@@ -133,15 +133,15 @@ module udma_filter_au
       s_sum_signed=0;
       if (s_sum_inv) begin
         if (cfg_use_signed_i) begin
-          s_sum_signed = $signed($signed(0)-$signed(s_sum));
+          s_sum_signed = 0 - $signed(s_sum);
         end else begin
-          s_sum_signed = $signed($signed(0)-$unsigned(s_sum));
+          s_sum_signed = $signed(0 - s_sum);
         end
       end else begin
         if (cfg_use_signed_i) begin
-          s_sum_signed = $signed($unsigned(s_sum));
+          s_sum_signed = $signed(s_sum);
         end else begin
-          s_sum_signed = $signed($signed(s_sum));
+          s_sum_signed = $signed(s_sum);
         end
       end
     end
