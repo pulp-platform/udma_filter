@@ -129,20 +129,22 @@ module udma_filter_au
     assign output_valid_o = s_sum_acc ? r_accoutvalid : r_sample_out;
     assign output_datasize_o = operanda_datasize_i;
     logic signed [32:0] s_sum_signed;
+    logic        [31:0] s_sum_neg_u;
+    logic signed [31:0] s_sum_neg_s;
+
+    assign s_sum_neg_u = -s_sum;
+    assign s_sum_neg_s = -$signed(s_sum);
+
     always_comb begin
-      s_sum_signed=0;
+      s_sum_signed = '0;
       if (s_sum_inv) begin
         if (cfg_use_signed_i) begin
-          s_sum_signed = 0 - $signed(s_sum);
+          s_sum_signed = s_sum_neg_s;
         end else begin
-          s_sum_signed = $signed(0 - s_sum);
+          s_sum_signed = $signed(s_sum_neg_u);
         end
       end else begin
-        if (cfg_use_signed_i) begin
-          s_sum_signed = $signed(s_sum);
-        end else begin
-          s_sum_signed = $signed(s_sum);
-        end
+        s_sum_signed = $signed(s_sum);
       end
     end
     assign s_mac = $signed(s_opa)*$signed(s_opb) + s_sum_signed;
